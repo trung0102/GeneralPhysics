@@ -5,10 +5,10 @@ import streamlit as st
 st.set_page_config(page_title="Momen Động Lượng", layout="wide")
 st.markdown("<h1 style='text-align: center;'>Khảo sát Quỹ đạo và Momen động lượng</h1>", unsafe_allow_html=True)
 
-# Khai báo biến hình thức t
+# Khai báo biến hình thức t, m
 t, m = sp.symbols('t m')
 
-def calc_with_time():
+def get_time():
     cols_params = st.columns([1.3, 1, 0.5, 0.5, 1.4, 2.3, 0.4], vertical_alignment="center")
     t_value = 0.0
     with cols_params[0]: 
@@ -24,8 +24,8 @@ def calc_with_time():
 
 def get_polynomial_coefficients(axis_name):
     st.subheader(f"Nhập phương trình {axis_name}(t):")
-    # Tạo các cột để xếp hàng ngang: Nhãn -> Ô nhập -> Nhãn -> Ô nhập...
-    # Tỷ lệ cột: [nhãn đầu, ô, nhãn, ô, nhãn, ô, nhãn, ô, nhãn, ô]
+    
+    # [nhãn đầu, ô, nhãn, ô, nhãn, ô, nhãn, ô, nhãn, ô]
     cols = st.columns([0.6, 1, 0.6, 1, 0.6, 1, 0.6, 1, 0.6, 1], vertical_alignment="center")
     
     with cols[0]: st.markdown(f"### {axis_name}(t) = ")
@@ -37,8 +37,9 @@ def get_polynomial_coefficients(axis_name):
     with cols[6]: st.markdown("### $t^2 +$")
     with cols[7]: c1 = st.number_input("t^1", value=0.0, step=0.1, key=f"{axis_name}1", label_visibility="collapsed")
     with cols[8]: st.markdown("### $t +$")
-    with cols[9]: c0 = st.number_input("t^0", value=0.0, step=0.1, key=f"{axis_name}0", label_visibility="collapsed")
-    
+    with cols[9]: c0 = st.text_input("t^0", value="0", key=f"{axis_name}0", label_visibility="collapsed")
+
+    c0 = sp.sympify(c0)
     return c4*t**4 + c3*t**3 + c2*t**2 + c1*t + c0
 
 def main():
@@ -63,7 +64,8 @@ def main():
         st.subheader("**s**")
 
     st.divider()
-    t_value = calc_with_time()
+    t_value = get_time()
+
     col_left, col_center, col_right = st.columns([2, 1.1, 2])
     btnSolve = col_center.button("Giải và Vẽ Đồ Thị", type="primary", use_container_width=True)
     if btnSolve:
@@ -73,17 +75,13 @@ def main():
         vy_expr = sp.diff(y_expr, t)
 
         L_expr = m*(x_expr*vy_expr - y_expr*vx_expr)
-
-        L_expr = sp.simplify(L_expr)
-        
+        L_expr = sp.simplify(L_expr)  
 
         xfunc = sp.lambdify(t, x_expr, 'numpy')
         yfunc = sp.lambdify(t, y_expr, 'numpy')
         vxfunc = sp.lambdify(t, vx_expr, 'numpy')
         vyfunc = sp.lambdify(t, vy_expr, 'numpy')
         Lfunc = sp.lambdify((t, m), L_expr, 'numpy')
-
-        
     
         print(f"Vận tốc: vx = {vx_expr}, vy = {vy_expr}")
         st.success(f"**Vận tốc:** $v_x = {sp.latex(vx_expr)}$, $v_y = {sp.latex(vy_expr)}$")
@@ -108,14 +106,14 @@ def main():
         Lvalues = Lfunc(tvalues, m_value)
 
         if np.isscalar(Lvalues):
-            print("Động lượng góc L là hằng số.")
+            print("Động lượng L là hằng số.")
             Lvalues = np.full_like(tvalues, Lvalues)
 
         fig1, ax1 = plt.subplots(figsize=(12, 5))
 
         # Đồ thị 1: Quỹ đạo chuyển động (y theo x)
         ax1.plot(xvalues, yvalues, 'b-', linewidth=2)
-        ax1.set_title("Quỹ đạo chuyển động y = y(x)")
+        ax1.set_title("Quỹ đạo chuyển động y theo x")
         ax1.set_xlabel("x(t) (m)")
         ax1.set_ylabel("y(t) (m)")
         ax1.grid(True)
@@ -124,9 +122,9 @@ def main():
         # Đồ thị 2: Biến thiên Momen động lượng theo thời gian
         fig2, ax2 = plt.subplots(figsize=(12, 5))
         ax2.plot(tvalues, Lvalues, 'r-', linewidth=2)
-        ax2.set_title("Sự biến thiên của Momen động lượng $L_z$ theo t")
+        ax2.set_title("Sự biến thiên của Momen động lượng L theo t")
         ax2.set_xlabel("Thời gian t (s)")
-        ax2.set_ylabel("$L_z$ (kg.m^2/s)")
+        ax2.set_ylabel("$L (kg.m^2/s)$")
         ax2.grid(True)
         st.pyplot(fig2)
         
