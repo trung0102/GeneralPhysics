@@ -8,6 +8,20 @@ st.markdown("<h1 style='text-align: center;'>Khảo sát Quỹ đạo và Momen 
 # Khai báo biến hình thức t
 t, m = sp.symbols('t m')
 
+def calc_with_time():
+    cols_params = st.columns([1.3, 1, 0.5, 0.5, 1.4, 2.3, 0.4], vertical_alignment="center")
+    t_value = 0.0
+    with cols_params[0]: 
+        st.subheader("**Thời gian t =**")
+    with cols_params[1]: 
+        t_value = st.number_input("Thời gian t (s)", value=0.0, step=0.5, label_visibility="collapsed")
+    with cols_params[2]: 
+        st.subheader("**s**")
+    
+    return t_value
+
+    
+
 def get_polynomial_coefficients(axis_name):
     st.subheader(f"Nhập phương trình {axis_name}(t):")
     # Tạo các cột để xếp hàng ngang: Nhãn -> Ô nhập -> Nhãn -> Ô nhập...
@@ -42,38 +56,52 @@ def main():
     with cols_params[2]: 
         st.subheader("**kg**")
     with cols_params[4]: 
-        st.subheader("**Khảo sát thời gian t (s):**")
+        st.subheader("**Khảo sát thời gian t:**")
     with cols_params[5]: 
-        t_max = st.slider("Khảo sát thời gian t (s):", min_value=1.0, max_value=20.0, value=5.0, step=1.0, label_visibility="collapsed")
+        t_max = st.slider("Khảo sát thời gian t:", min_value=1.0, max_value=20.0, value=5.0, step=0.5, label_visibility="collapsed")
     with cols_params[6]: 
         st.subheader("**s**")
 
     st.divider()
-
+    t_value = calc_with_time()
     col_left, col_center, col_right = st.columns([2, 1.1, 2])
     btnSolve = col_center.button("Giải và Vẽ Đồ Thị", type="primary", use_container_width=True)
     if btnSolve:
-        print(f"Phuong trinh duong di: x = {x_expr}, y = {y_expr}")
-
+    
         # Tính vận tốc vx(t) và vy(t) bằng đạo hàm (diff)
         vx_expr = sp.diff(x_expr, t)
         vy_expr = sp.diff(y_expr, t)
 
-        print(f"Vận tốc: vx = {vx_expr}, vy = {vy_expr}")
-        st.success(f"**Vận tốc:** $v_x = {sp.latex(vx_expr)}$, $v_y = {sp.latex(vy_expr)}$")
-
         L_expr = m*(x_expr*vy_expr - y_expr*vx_expr)
 
         L_expr = sp.simplify(L_expr)
-        print(f"Động lượng góc L = {L_expr}")
-        st.success(f"**Động lượng góc:** $L = {sp.latex(L_expr)}$")
+        
 
         xfunc = sp.lambdify(t, x_expr, 'numpy')
         yfunc = sp.lambdify(t, y_expr, 'numpy')
+        vxfunc = sp.lambdify(t, vx_expr, 'numpy')
+        vyfunc = sp.lambdify(t, vy_expr, 'numpy')
         Lfunc = sp.lambdify((t, m), L_expr, 'numpy')
 
+        
+    
+        print(f"Vận tốc: vx = {vx_expr}, vy = {vy_expr}")
+        st.success(f"**Vận tốc:** $v_x = {sp.latex(vx_expr)}$, $v_y = {sp.latex(vy_expr)}$")
+        print(f"Động lượng L = {L_expr}")
+        st.success(f"**Động lượng:** $L = {sp.latex(L_expr)}$")
+        print(f"Phuong trinh duong di: x = {x_expr}, y = {y_expr}")
         tvalues = np.linspace(0, t_max, 100)
         
+        if t_value > 0:
+            vx_at_t = vxfunc(t_value)
+            vy_at_t = vyfunc(t_value)
+            L_at_t = Lfunc(t_value, m_value)
+
+            st.success(f"""
+            **Tại thời điểm t = {t_value} s:**
+            * Vận tốc: $v_x = {vx_at_t:.2f}$ m/s,  $v_y = {vy_at_t:.2f}$ m/s
+            * Momen động lượng: $L = {L_at_t:.2f}$ $kg.m^2/s$
+            """)
 
         xvalues = xfunc(tvalues)
         yvalues = yfunc(tvalues)    
